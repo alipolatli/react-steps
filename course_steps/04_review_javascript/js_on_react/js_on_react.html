@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS On React</title>
+</head>
+<body>
+    <button onclick="loadScript('./01_destructing_objects_arrays.js')">01_destructing_objects_arrays</button>
+    <button onclick="loadScript('./02_rest_spread.js')">02_rest_spread</button>
+    <button onclick="loadScript('./03_template_literals.js')">03_template_literals</button>
+    <button onclick="loadScript('./04_short_circuiting.js')">04_short_circuiting</button>
+    <button onclick="loadScript('./05_optional_chaining.js')">05_optional_chaining</button>
+    <button onclick="loadScript('./06_map_method.js')">06_map_method</button>
+    <button onclick="loadScript('./07_filter_method.js')">07_filter_method</button>
+    <button onclick="loadScript('./08_reduce_method.js')">08_reduce_method</button>
+    <button onclick="loadScript('./09_sort_method.js')">09_sort_method</button>
+    <button onclick="loadScript('./10_immutable_arrays.js')">10_immutable_arrays</button>
+    <button onclick="loadScript('./11_async_await_promise.js')">11_async_await_promise</button>
+
+    <script>
+        function loadScript(scriptPath) {
+            console.clear();
+
+            const scriptElements = document.querySelectorAll('script[data-js-on-react]');
+            scriptElements.forEach(scriptElement => {
+                scriptElement.remove();
+            });
+            const script = document.createElement('script');
+            script.src = scriptPath;
+            script.setAttribute('data-js-on-react', '');
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
+

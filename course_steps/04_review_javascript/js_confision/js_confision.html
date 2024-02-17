@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Js Confusion</title>
+</head>
+<body>
+    <button onclick="loadScript('./01_var_let_const_hoisting.js')">01_var_let_const_hoisting</button>
+    <button onclick="loadScript('./02_functions.js')">02_functions</button>
+    <button onclick="loadScript('./03_object_constructor.js')">03_object_constructor</button>
+    <button onclick="loadScript('./04_object_prototype.js')">04_object_prototype</button>
+    <button onclick="loadScript('./05_object_syntax_dest_rest_spread.js')">05_object_syntax_dest_rest_spread</button>
+    <button onclick="loadScript('./06_object_class.js')">06_object_class</button>
+    <button onclick="loadScript('./07_this.js')">07_this</button>
+    <button onclick="loadScript('./08_arrow.js')">08_arrow</button>
+    <button onclick="loadScript('./09_callback.js')">09_callback</button>
+    <button onclick="loadScript('./10_async_promise.js')">10_async_promise</button>
+
+    <script>
+        function loadScript(scriptPath) {
+            console.clear();
+            const scriptElements = document.querySelectorAll('script[data-js-confusion]');
+            scriptElements.forEach(scriptElement => {
+                scriptElement.remove();
+            });
+
+            const script = document.createElement('script');
+            script.src = scriptPath;
+            script.setAttribute('data-js-confusion', '');
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
