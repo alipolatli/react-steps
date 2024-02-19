@@ -96,7 +96,6 @@ const skills: ISkill[] = [
   { name: "GO", point: 1 },
 ];
 
-// Add 10 more skills related to JavaScript, TypeScript, React, MongoDB, etc.
 const frontendSkills: ISkill[] = [
   { name: "JavaScript", point: 6 },
   { name: "TypeScript", point: 7 },

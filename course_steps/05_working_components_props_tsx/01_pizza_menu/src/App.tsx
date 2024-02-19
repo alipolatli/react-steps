@@ -12,8 +12,8 @@ function App() {
 }
 
 function Header() {
-  // const style = { color: "red", fontSize: "48px", textTransform: "uppercase" };
-  const style = {};
+  // const style = { color: "red", fontSize: "48px", textTransform: "uppercase" } as React.CSSProperties;
+  const style = {} as React.CSSProperties;
 
   return (
     <header className="header">
@@ -28,7 +28,6 @@ function Menu() {
   return (
     <main className="menu">
       <h2>Our menu</h2>
-
       {numPizzas > 0 ? (
         <React.Fragment>
           <p>
@@ -49,20 +48,49 @@ function Menu() {
   );
 }
 
-function Pizza({ pizzaObj }: { pizzaObj: IPizza }) {
+function Pizza({ pizzaObj }: IPizzaProps) {
+  console.log(pizzaObj);
   return (
-    <li>
-      <div>{pizzaObj.name}</div>
-      <div>{pizzaObj.ingredients}</div>
-      <div>${pizzaObj.price}</div>
-      <img src={pizzaObj.photoName} alt={pizzaObj.name} width={200} />
-      <div>{pizzaObj.soldOut ? "Sold Out" : "Available"}</div>
+    <li className={`pizza ${pizzaObj.soldOut ? "sold-out" : ""}`}>
+      <img src={pizzaObj.photoName} alt={pizzaObj.name} />
+      <div>
+        <h3>{pizzaObj.name}</h3>
+        <p>{pizzaObj.ingredients}</p>
+        <span>{pizzaObj.soldOut ? "SOLD OUT" : pizzaObj.price}</span>
+      </div>
     </li>
   );
 }
 
 function Footer() {
-  return <div>A</div>;
+  const hour = new Date().getHours();
+  const openHour: number = 12;
+  const closeHour: number = 22;
+  const isOpen: boolean = hour >= openHour && hour <= closeHour;
+  console.log(isOpen);
+  return (
+    <footer className="footer">
+      {isOpen ? (
+        <Order closeHour={closeHour} openHour={openHour} />
+      ) : (
+        <p>
+          We're happy to welcome you between {openHour}:00 and {closeHour}:00.
+        </p>
+      )}
+    </footer>
+  );
+}
+
+function Order({ closeHour, openHour }: ICloseHourProps) {
+  return (
+    <div className="order">
+      <p>
+        We're open from {openHour}:00 to {closeHour}:00. Come visit us or order
+        online.
+      </p>
+      <button className="btn">Order</button>
+    </div>
+  );
 }
 
 const pizzaData: Array<IPizza> = [
@@ -116,6 +144,15 @@ interface IPizza {
   price: number;
   photoName: string;
   soldOut: boolean;
+}
+
+interface IPizzaProps {
+  pizzaObj: IPizza;
+}
+
+interface ICloseHourProps {
+  closeHour: number;
+  openHour: number;
 }
 
 export default App;
