@@ -160,7 +160,9 @@ const newBook = {
   
   // 3) Update book object in the array
   const booksAfterUpdate = booksAfterDelete.map((book) =>
-    book.id === 1 ? { ...book, pages: 1210 } : book
+    book.id === 1 
+    ? { ...book, pages: 1210 } 
+    : book
   );
   booksAfterUpdate;
   

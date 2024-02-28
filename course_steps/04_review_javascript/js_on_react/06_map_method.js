@@ -143,6 +143,6 @@ const data = [
     return data.find((d) => d.id === id);
   }
 
-  let arr = books
+  let titleArr = books
   .filter((b) => b.title[0] !== "T")
   .map((b) => b.title);

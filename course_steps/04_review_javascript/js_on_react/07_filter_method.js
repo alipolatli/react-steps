@@ -147,4 +147,3 @@ const data = [
 
   let arr = books
   .filter((b) => b.title[0] !== "T");
-arr
