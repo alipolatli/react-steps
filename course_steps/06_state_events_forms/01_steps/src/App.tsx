@@ -7,6 +7,18 @@ const messages: Array<string> = [
   "Invest your new income 🤑",
 ];
 
+interface IButtonProps{
+  onClick: () => void;
+  children: React.ReactNode;
+}
+function Button(buttonProps: IButtonProps):React.JSX.Element{
+  return(
+    <button onClick={() => buttonProps.onClick()} style={{backgroundColor:"peru"}}>
+      {buttonProps.children}
+    </button>
+  )
+}
+
 function App() {
   const [step, setStep] = React.useState<number>(1);
   const [isOpen, setIsOpen] = React.useState<boolean>(true);
@@ -43,12 +55,13 @@ function App() {
          >
            Previous
          </button>
-         <button
+         <Button onClick={handleNext}>Next</Button>
+         {/* <button
            style={{ backgroundColor: "peru" }}
            onClick={() => handleNext()}
          >
            Next
-         </button>
+         </button> */}
        </div>
      </div>
     }
@@ -56,5 +69,7 @@ function App() {
      
   );
 }
+
+
 
 export default App;
