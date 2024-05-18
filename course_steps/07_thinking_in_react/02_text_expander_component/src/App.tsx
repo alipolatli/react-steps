@@ -63,7 +63,9 @@ function TextExpander({
     setIsExpanded(!isExpanded);
   };
 
-  const renderedText = isExpanded ? text : text.split(' ').slice(0, collapsedNumWords).join(' ') + '...';
+  const renderedText = isExpanded
+    ? text
+    : text.split(' ').slice(0, collapsedNumWords).join(' ') + '...';
 
   return (
     <div className={className}>
