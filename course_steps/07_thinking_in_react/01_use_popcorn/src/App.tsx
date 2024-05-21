@@ -1,4 +1,41 @@
 import React, { useState } from "react";
+import StarRating from "./components/StarRating";
+
+//#region  API RESPONSE
+interface ISearchMovieApiResponse {
+  Response: boolean;
+  Search: Array<IMovie>;
+  totalResults: string;
+}
+interface IMovieDetailApiResponse {
+  Actors: string;
+  Awards: string;
+  BoxOffice: string;
+  Country: string;
+  Dvd: string;
+  Director: string;
+  Genre: string[]; // Array of genres (Crime, Drama, Thriller)
+  Language: string[]; // Array of languages (English, German)
+  Metascore: string;
+  Plot: string;
+  Poster: string; // URL of the poster image
+  Rated: string;
+  Ratings: IMovieDetailApiResponse_IRating[]; // Array of Rating objects
+  Released: string;
+  Runtime: string;
+  Title: string;
+  Type: string;
+  Writer: string;
+  Year: string;
+  ImdbID: string;
+  imdbRating: string;
+  ImdbVotes: string;
+}
+interface IMovieDetailApiResponse_IRating {
+  Source: string;
+  Value: string;
+}
+//#endregion
 
 interface IMovie {
   imdbID: string;
@@ -57,8 +94,108 @@ const tempWatchedData: IMovie[] = [
   },
 ];
 
+const API_KEY = "55c0e22f";
 const average = (arr: number[]): number =>
   arr.reduce((acc, cur) => acc + cur, 0) / arr.length;
+
+function App() {
+  const [query, setQuery] = useState<string>("joker");
+  const [foundCount, setFoundCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [movies, setMovies] = useState<IMovie[]>(tempMovieData);
+  const [watchedMovies, setWatchedMovies] = useState<IMovie[]>(tempWatchedData);
+  const [error, setError] = useState<string>("");
+  const [selectedId, setSelectedId] = useState<string>(" ");
+  React.useEffect(() => {
+    async function fetchMovies() {
+      try {
+        setIsLoading(() => true);
+        const response = await fetch(
+          `https://www.omdbapi.com/?apikey=${API_KEY}&s=${query}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Something went wrong.");
+        }
+        const apiResponse: ISearchMovieApiResponse = await response.json();
+        console.log(apiResponse);
+        setMovies(() => apiResponse.Search);
+        setFoundCount(() => apiResponse.Search?.length);
+        setIsLoading(() => false);
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(error.message);
+          setError(error.message);
+        } else {
+          setError((e) => (e = "An unexpected error occurred"));
+        }
+      } finally {
+        setIsLoading(() => false);
+      }
+    }
+    fetchMovies();
+  }, [query]);
+
+  function handleSelectedId(id: string) {
+    console.log(id);
+    setSelectedId(id);
+  }
+
+  return (
+    <>
+      <Navbar>
+        <Logo></Logo>
+        <Search query={query} onSetQuery={setQuery}></Search>
+        <NumResults foundCount={foundCount}></NumResults>
+      </Navbar>
+
+      <Main>
+        <Box>
+          {isLoading && <Loader />}
+          {!isLoading && !error && (
+            <MovieList
+              movies={movies}
+              onSelectedMovie={(id) => handleSelectedId(id)}
+            ></MovieList>
+          )}
+          {error && <ErrorMessage message={error} />}
+        </Box>
+        <Box>
+          {selectedId !== " " ? (
+            <MovieDetail
+              selectedId={selectedId}
+              onPrevious={() => handleSelectedId(" ")}
+            ></MovieDetail>
+          ) : (
+            <>
+              <WatchedSummary watchedMovies={watchedMovies} />
+              <WatchedMovieList watchedMovies={watchedMovies} />
+            </>
+          )}
+        </Box>
+      </Main>
+    </>
+  );
+}
+
+function Loader() {
+  return (
+    <div>
+      <h1>Loading...</h1>
+    </div>
+  );
+}
+
+interface IErrorMessageProps {
+  message: string;
+}
+function ErrorMessage({ message }: IErrorMessageProps) {
+  return (
+    <div>
+      <h1>{message}</h1>
+    </div>
+  );
+}
 
 function Navbar({ children }: INavbarProps) {
   return <nav className="nav-bar">{children}</nav>;
@@ -73,24 +210,101 @@ function Logo() {
   );
 }
 
-function Search() {
-  const [query, setQuery] = useState<string>("");
+interface ISearchProps {
+  onSetQuery: (query: string) => void;
+  query: string;
+}
+function Search({ query, onSetQuery }: ISearchProps) {
+  function handleSetQuery(query: string): void {
+    onSetQuery(query);
+  }
   return (
     <input
       className="search"
       type="text"
       placeholder="Search movies..."
       value={query}
-      onChange={(e) => setQuery(e.target.value)}
+      onChange={(e) => handleSetQuery(e.target.value)}
     />
   );
 }
 
-function NumResults() {
+interface INumResultsProps {
+  foundCount: number;
+}
+function NumResults({ foundCount }: INumResultsProps) {
   return (
     <p className="num-results">
-      Found <strong>X</strong> results
+      Found <strong>{foundCount}</strong> results
     </p>
+  );
+}
+
+interface IMovieDetailProps {
+  selectedId: string;
+  onPrevious: () => void;
+}
+
+function MovieDetail({ selectedId, onPrevious }: IMovieDetailProps) {
+  const [rate, setRate] = useState<number>();
+  const [selectedMovie, setSelectedMovie] = useState<IMovieDetailApiResponse>(
+    {} as IMovieDetailApiResponse
+  );
+
+  React.useEffect(() => {
+    async function fetchMovieDetail() {
+      try {
+        const response = await fetch(
+          `https://www.omdbapi.com/?apikey=${API_KEY}&i=${selectedId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Something went wrong.");
+        }
+        const apiResponse: IMovieDetailApiResponse = await response.json();
+        console.log(apiResponse);
+        setSelectedMovie(() => apiResponse);
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(error.message);
+        }
+      }
+    }
+    fetchMovieDetail();
+  }, [selectedId]);
+  return (
+    <div className="details">
+      <header>
+        <button onClick={() => onPrevious()} className="btn-back">&larr;</button>
+        <img
+          src={selectedMovie.Poster}
+          alt={`Poster of ${selectedMovie.Title}`}
+        ></img>
+        <div className="details-overview">
+          <h2>{selectedMovie.Title}</h2>
+          <p>
+            {selectedMovie.Released} &bull; {selectedMovie.Runtime}
+          </p>
+          <p>{selectedMovie.Genre}</p>
+          <p>
+            <span>⭐️</span>
+            {selectedMovie.imdbRating}
+          </p>
+        </div>
+      </header>
+      <section>
+        <StarRating onSetRating={(r) => setRate(r)}></StarRating>
+        <p>
+          <em>{selectedMovie.Plot}</em>
+        </p>
+        <p>
+          <strong>Actors:</strong> {selectedMovie.Actors}
+        </p>
+        <p>
+          <strong>Director:</strong> {selectedMovie.Director}
+        </p>
+      </section>
+    </div>
   );
 }
 
@@ -170,28 +384,24 @@ function Box({ children }: IWatchedListBoxProps) {
 
   return (
     <div className="box">
-      <button
-        className="btn-toggle"
-        onClick={() => setIsOpen((open) => !open)}
-      >
+      <button className="btn-toggle" onClick={() => setIsOpen((open) => !open)}>
         {isOpen ? "–" : "+"}
       </button>
-      {isOpen && (
-        children
-      )}
+      {isOpen && children}
     </div>
   );
 }
 
 interface IMovieListProps {
   movies: IMovie[];
+  onSelectedMovie: (id: string) => void;
 }
 
-function MovieList({ movies }: IMovieListProps) {
+function MovieList({ movies, onSelectedMovie }: IMovieListProps) {
   return (
     <ul className="list">
       {movies?.map((movie) => (
-        <li key={movie.imdbID}>
+        <li onClick={() => onSelectedMovie(movie.imdbID)} key={movie.imdbID}>
           <img src={movie.Poster} alt={`${movie.Title} poster`} />
           <h3>{movie.Title}</h3>
           <div>
@@ -207,7 +417,7 @@ function MovieList({ movies }: IMovieListProps) {
 }
 
 interface IMainProps {
-  children: React.ReactNode; 
+  children: React.ReactNode;
 }
 
 function Main({ children }: IMainProps) {
@@ -216,36 +426,6 @@ function Main({ children }: IMainProps) {
 
 interface INavbarProps {
   children: React.ReactNode;
-}
-
-function App() {
-  const [movies, setMovies] = useState<IMovie[]>(tempMovieData);
-  const [watchedMovies, setWatchedMovies] = useState<IMovie[]>(tempWatchedData);
-
-  return (
-    <>
-      <Navbar>
-      
-        <Logo></Logo>
-        <Search></Search>
-        <NumResults></NumResults>
-      
-      </Navbar>
-
-      <Main>
-      
-        <Box>
-          <MovieList movies={movies}></MovieList>
-        </Box>
-
-        <Box>
-          <WatchedSummary watchedMovies={watchedMovies}></WatchedSummary>
-          <WatchedMovieList watchedMovies={watchedMovies}></WatchedMovieList>
-        </Box>
-      
-      </Main>
-    </>
-  );
 }
 
 export default App;

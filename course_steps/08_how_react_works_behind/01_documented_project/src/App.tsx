@@ -79,8 +79,11 @@ function TabContent({ item }: ITabContentProps) {
   const [showDetails, setShowDetails] = useState<boolean>(true);
   const [likes, setLikes] = useState<number>(0);
 
-  function handleInc() {
-    setLikes(likes + 1);
+  function handleUndo(){
+    setLikes(0);
+    console.log(likes);
+    setShowDetails(true);
+    console.log(showDetails);
   }
 
   return (
@@ -96,13 +99,13 @@ function TabContent({ item }: ITabContentProps) {
         <div className="hearts-counter">
           <span>{likes} ❤️</span>
           <button onClick={() => setLikes( likes +1) }>+</button>
-          <button>+++</button>
+          <button onClick={() => setLikes( likes +3) }>+++</button>
         </div>
       </div>
 
       <div className="tab-undo">
-        <button>Undo</button>
-        <button>Undo in 2s</button>
+        <button onClick={() => handleUndo()}>Undo</button>
+        <button onClick={() => setTimeout(handleUndo, 2000)}>Undo in 2s</button>
       </div>
     </div>
   );

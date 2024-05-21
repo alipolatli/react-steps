@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
-
-interface IStarRatingProps{
-  maxRating: number;
-  emptyColor : string;
-  fillColor : string;
-  size : number;
-  onSetRating : (rate : number) => void;
+interface IStarRatingProps {
+  maxRating?: number;
+  emptyColor?: string;
+  fillColor?: string;
+  size?: number;
+  onSetRating: (rate: number) => void;
 }
 
-export default function StarRating({ maxRating ,emptyColor, fillColor, size , onSetRating}: IStarRatingProps){
+export default function StarRating({
+  maxRating = 10,
+  emptyColor = "gray",
+  fillColor = "yellow",
+  size = 24,
+  onSetRating,
+}: IStarRatingProps) {
   const [rating, setRating] = useState<number>(0);
   const [tempRating, setTempRating] = useState<number>(0);
 
@@ -18,56 +23,61 @@ export default function StarRating({ maxRating ,emptyColor, fillColor, size , on
     onSetRating(newRating);
   };
 
-  const handleOnTempRating = (isIn : boolean, i: number) => {
+  const handleOnTempRating = (isIn: boolean, i: number) => {
     setTempRating(isIn ? i : 0);
-  }
+  };
 
   return (
-    <React.Fragment>
-      <div style={starContainerStyle}>
-        {Array.from({ length: maxRating}, (_, i) => i + 1).map((i) => (
-          <Star
+    <div style={starContainerStyle}>
+      {Array.from({ length: maxRating }, (_, i) => i + 1).map((i) => (
+        <Star
           fillColor={emptyColor}
           emptyColor={fillColor}
-           size={size}
-            key={i}
-            filled={ tempRating !== 0 ? tempRating >=i : rating >=i }
-            onRate={() => handleOnRate(i)}
-            onHover={(isIn) => handleOnTempRating(isIn,i)}
-          />
-        ))}
-      </div>
+          size={size}
+          key={i}
+          filled={tempRating !== 0 ? tempRating >= i : rating >= i}
+          onRate={() => handleOnRate(i)}
+          onHover={(isIn) => handleOnTempRating(isIn, i)}
+        />
+      ))}
       <span>{tempRating || rating}</span>
-    </React.Fragment>
+    </div>
   );
 }
 
 const starContainerStyle = {
-  display: 'flex',
+  display: "flex",
 };
 
 interface IStarProps {
   filled: boolean;
   onRate: () => void;
   onHover: (isIn: boolean) => void;
-  emptyColor : string;
-  fillColor : string;
-  size : number;
+  emptyColor: string;
+  fillColor: string;
+  size: number;
 }
 
-function Star({ filled, onRate, onHover, emptyColor, fillColor, size }: IStarProps) {
+function Star({
+  filled,
+  onRate,
+  onHover,
+  emptyColor,
+  fillColor,
+  size,
+}: IStarProps) {
   return (
     <svg
-    width={size}
-    height={size}
-    onMouseEnter={() => onHover(true)}
-    onMouseLeave={() => onHover(false)}
+      width={size}
+      height={size}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
       onClick={onRate}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 20 20"
       fill={filled ? emptyColor : fillColor}
       stroke="#000"
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: "pointer" }}
     >
       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
     </svg>
@@ -114,4 +124,3 @@ EMPTY STAR
 </svg>
 
 */
-
