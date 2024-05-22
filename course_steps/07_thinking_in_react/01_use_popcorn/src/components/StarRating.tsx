@@ -40,7 +40,7 @@ export default function StarRating({
           onHover={(isIn) => handleOnTempRating(isIn, i)}
         />
       ))}
-      <span>{tempRating || rating}</span>
+      <h2 style={{color:fillColor}}>{tempRating || rating}</h2>
     </div>
   );
 }
