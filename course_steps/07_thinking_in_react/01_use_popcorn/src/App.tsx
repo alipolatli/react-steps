@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import StarRating from "./components/StarRating";
+import { title } from "process";
 
 //#region  API RESPONSE
 interface ISearchMovieApiResponse {
@@ -107,24 +108,31 @@ function App() {
   const [error, setError] = useState<string>("");
   const [selectedId, setSelectedId] = useState<string>(" ");
   React.useEffect(() => {
+    const controller= new AbortController();
+
     async function fetchMovies() {
       try {
         setIsLoading(() => true);
         const response = await fetch(
-          `https://www.omdbapi.com/?apikey=${API_KEY}&s=${query}`
+          `https://www.omdbapi.com/?apikey=${API_KEY}&s=${query}`,
+          { signal: controller.signal }
         );
+        
 
         if (!response.ok) {
           throw new Error("Something went wrong.");
         }
         const apiResponse: ISearchMovieApiResponse = await response.json();
-        console.log(apiResponse);
         setMovies(() => apiResponse.Search);
         setFoundCount(() => apiResponse.Search?.length);
         setIsLoading(() => false);
       } catch (error) {
         if (error instanceof Error) {
           console.error(error.message);
+          console.log(error.name)
+          if (error.name === "AbortError") {
+            return;
+          }
           setError(error.message);
         } else {
           setError((e) => (e = "An unexpected error occurred"));
@@ -134,10 +142,12 @@ function App() {
       }
     }
     fetchMovies();
+    return function(){
+      controller.abort();
+    }
   }, [query]);
 
   function handleSelectedId(id: string) {
-    console.log(id);
     setSelectedId(id);
   }
 
@@ -153,6 +163,13 @@ function App() {
     setWatchedMovies((prev) => prev.filter(m => m.imdbID !== movie.imdbID));
     handleSelectedId(" ");
   }
+
+
+  function handleCloseMovieDetail(){
+    handleSelectedId(" ");
+  }
+
+
 
   return (
     <>
@@ -177,7 +194,7 @@ function App() {
           {selectedId !== " " ? (
             <MovieDetail
               selectedId={selectedId}
-              onPrevious={() => handleSelectedId(" ")}
+              onPrevious={handleCloseMovieDetail}
               onAddWatchList={handleOnAddWatchList}
               watchedMovie={
                 watchedMovies.find((m) => m.imdbID === selectedId) || null
@@ -273,7 +290,6 @@ function MovieDetail({
   const [selectedMovie, setSelectedMovie] = useState<IMovieDetailApiResponse>(
     {} as IMovieDetailApiResponse
   );
-  console.log(watchedMovie);
   function handleAdd() {
     const movie: IMovie = {
       imdbID: selectedMovie.imdbID,
@@ -288,6 +304,31 @@ function MovieDetail({
   }
 
   React.useEffect(() => {
+    document.title =selectedMovie.Title;
+
+    return function(){
+      document.title = "usePopcorn";
+      console.log(selectedMovie.Title);
+    };
+  }, [selectedMovie.Title])
+
+  React.useEffect(function() {
+
+    function callback(e: KeyboardEvent){
+      if (e.code ==="Escape") {
+        onPrevious();
+        console.log("Closing")
+      }
+    }
+    document.addEventListener("keydown",callback);
+
+    return function(){
+      document.removeEventListener("keydown", callback);
+    }
+  }, [onPrevious]);
+
+
+  React.useEffect(() => {
     async function fetchMovieDetail() {
       try {
         const response = await fetch(
@@ -298,8 +339,8 @@ function MovieDetail({
           throw new Error("Something went wrong.");
         }
         const apiResponse: IMovieDetailApiResponse = await response.json();
-        console.log(apiResponse);
         setSelectedMovie(() => apiResponse);
+        //  document.title =selectedMovie.Title;
       } catch (error) {
         if (error instanceof Error) {
           console.error(error.message);
