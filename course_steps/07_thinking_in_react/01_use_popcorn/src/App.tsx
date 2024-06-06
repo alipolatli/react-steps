@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import StarRating from "./components/StarRating";
 import { title } from "process";
+import { useMovies } from "./useMovies";
+import { useLocalStorageState } from "./useLocalStorage";
+import { useKey } from "./useKey";
 
 //#region  API RESPONSE
-interface ISearchMovieApiResponse {
+export interface ISearchMovieApiResponse {
   Response: boolean;
   Search: Array<IMovie>;
   totalResults: string;
 }
-interface IMovieDetailApiResponse {
+export interface IMovieDetailApiResponse {
   Actors: string;
   Awards: string;
   BoxOffice: string;
@@ -32,13 +35,13 @@ interface IMovieDetailApiResponse {
   imdbRating: string;
   ImdbVotes: string;
 }
-interface IMovieDetailApiResponse_IRating {
+export interface IMovieDetailApiResponse_IRating {
   Source: string;
   Value: string;
 }
 //#endregion
 
-interface IMovie {
+export interface IMovie {
   imdbID: string;
   Title: string;
   Year: string;
@@ -46,6 +49,7 @@ interface IMovie {
   runtime?: number;
   imdbRating?: number;
   userRating?: number;
+  countRef?: React.MutableRefObject<number>;
 }
 
 const tempMovieData: IMovie[] = [
@@ -100,52 +104,24 @@ const average = (arr: number[]): number =>
   arr.reduce((acc, cur) => acc + cur, 0) / arr.length;
 
 function App() {
-  const [query, setQuery] = useState<string>("joker");
-  const [foundCount, setFoundCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [movies, setMovies] = useState<IMovie[]>(tempMovieData);
-  const [watchedMovies, setWatchedMovies] = useState<IMovie[]>([]);
-  const [error, setError] = useState<string>("");
+  const [query, setQuery] = useState<string>("");
+  // const [foundCount, setFoundCount] = useState<number>(0);
+  // const [isLoading, setIsLoading] = useState<boolean>(false);
+  // const [movies, setMovies] = useState<IMovie[]>(tempMovieData);
+  // const [error, setError] = useState<string>("");
+  const { foundCount, isLoading, movies, error } = useMovies(query);
+
+  const [watchedMovies, setWatchedMovies] = useLocalStorageState("movies", []);
+
   const [selectedId, setSelectedId] = useState<string>(" ");
-  React.useEffect(() => {
-    const controller= new AbortController();
-
-    async function fetchMovies() {
-      try {
-        setIsLoading(() => true);
-        const response = await fetch(
-          `https://www.omdbapi.com/?apikey=${API_KEY}&s=${query}`,
-          { signal: controller.signal }
-        );
-        
-
-        if (!response.ok) {
-          throw new Error("Something went wrong.");
-        }
-        const apiResponse: ISearchMovieApiResponse = await response.json();
-        setMovies(() => apiResponse.Search);
-        setFoundCount(() => apiResponse.Search?.length);
-        setIsLoading(() => false);
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error(error.message);
-          console.log(error.name)
-          if (error.name === "AbortError") {
-            return;
-          }
-          setError(error.message);
-        } else {
-          setError((e) => (e = "An unexpected error occurred"));
-        }
-      } finally {
-        setIsLoading(() => false);
-      }
-    }
-    fetchMovies();
-    return function(){
-      controller.abort();
-    }
-  }, [query]);
+  // const [watchedMovies, setWatchedMovies] = useState<IMovie[]>([]);
+  // const [watchedMovies, setWatchedMovies] = useState<IMovie[]>(function () {
+  //   const storedMovies = localStorage.getItem("watchedMovies");
+  //   if (storedMovies) {
+  //     return JSON.parse(storedMovies);
+  //   }
+  //   return [];
+  // });
 
   function handleSelectedId(id: string) {
     setSelectedId(id);
@@ -160,16 +136,13 @@ function App() {
   }
 
   function handleOnDeleteWatchList(movie: IMovie) {
-    setWatchedMovies((prev) => prev.filter(m => m.imdbID !== movie.imdbID));
+    setWatchedMovies((prev) => prev.filter((m) => m.imdbID !== movie.imdbID));
     handleSelectedId(" ");
   }
 
-
-  function handleCloseMovieDetail(){
+  function handleCloseMovieDetail() {
     handleSelectedId(" ");
   }
-
-
 
   return (
     <>
@@ -203,7 +176,10 @@ function App() {
           ) : (
             <>
               <WatchedSummary watchedMovies={watchedMovies} />
-              <WatchedMovieList onDeleteWatched={handleOnDeleteWatchList} watchedMovies={watchedMovies} />
+              <WatchedMovieList
+                onDeleteWatched={handleOnDeleteWatchList}
+                watchedMovies={watchedMovies}
+              />
             </>
           )}
         </Box>
@@ -252,6 +228,35 @@ function Search({ query, onSetQuery }: ISearchProps) {
   function handleSetQuery(query: string): void {
     onSetQuery(query);
   }
+  const inputQuery = React.useRef<HTMLInputElement>(null);
+
+  useKey("Enter", function () {
+    if (document.activeElement === inputQuery.current) {
+      return;
+    }
+    inputQuery.current!.focus();
+    onSetQuery("");
+  });
+
+  //move useKey
+  // React.useEffect(() => {
+  //   inputQuery.current!.focus();
+  //   function callback(e: KeyboardEvent) {
+  //     if (document.activeElement === inputQuery.current) {
+  //       return;
+  //     }
+  //     if (e.code === "Enter") {
+  //       onSetQuery("");
+  //       inputQuery.current!.focus();
+  //     }
+  //   }
+  //   document.addEventListener("keydown", callback);
+
+  //   return function () {
+  //     document.removeEventListener("keydown", callback);
+  //   };
+  // }, [onSetQuery]);
+
   return (
     <input
       className="search"
@@ -259,6 +264,7 @@ function Search({ query, onSetQuery }: ISearchProps) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => handleSetQuery(e.target.value)}
+      ref={inputQuery}
     />
   );
 }
@@ -290,6 +296,18 @@ function MovieDetail({
   const [selectedMovie, setSelectedMovie] = useState<IMovieDetailApiResponse>(
     {} as IMovieDetailApiResponse
   );
+
+  const countRef = useRef(0);
+  React.useEffect(
+    function () {
+      if (rate) {
+        countRef.current = countRef.current + 1;
+        alert(countRef.current);
+      }
+    },
+    [rate]
+  );
+
   function handleAdd() {
     const movie: IMovie = {
       imdbID: selectedMovie.imdbID,
@@ -299,34 +317,39 @@ function MovieDetail({
       runtime: Number.parseInt(selectedMovie.Runtime),
       imdbRating: Number.parseInt(selectedMovie.imdbRating),
       userRating: rate,
+      countRef: countRef,
     };
     onAddWatchList(movie);
   }
 
   React.useEffect(() => {
-    document.title =selectedMovie.Title;
+    document.title = selectedMovie.Title;
 
-    return function(){
+    return function () {
       document.title = "usePopcorn";
       console.log(selectedMovie.Title);
     };
-  }, [selectedMovie.Title])
+  }, [selectedMovie.Title]);
 
-  React.useEffect(function() {
+  useKey("Escape", onPrevious);
 
-    function callback(e: KeyboardEvent){
-      if (e.code ==="Escape") {
-        onPrevious();
-        console.log("Closing")
-      }
-    }
-    document.addEventListener("keydown",callback);
+  //move useKey
+  // React.useEffect(
+  //   function () {
+  //     function callback(e: KeyboardEvent) {
+  //       if (e.code === "Escape") {
+  //         onPrevious();
+  //         console.log("Closing");
+  //       }
+  //     }
+  //     document.addEventListener("keydown", callback);
 
-    return function(){
-      document.removeEventListener("keydown", callback);
-    }
-  }, [onPrevious]);
-
+  //     return function () {
+  //       document.removeEventListener("keydown", callback);
+  //     };
+  //   },
+  //   [onPrevious]
+  // );
 
   React.useEffect(() => {
     async function fetchMovieDetail() {
@@ -447,9 +470,12 @@ function WatchedSummary({ watchedMovies }: IWatchedSummaryProps) {
 
 interface IWatchedMovieListProps {
   watchedMovies: IMovie[];
-  onDeleteWatched : (movie : IMovie) => void;
+  onDeleteWatched: (movie: IMovie) => void;
 }
-function WatchedMovieList({ watchedMovies ,onDeleteWatched}: IWatchedMovieListProps) {
+function WatchedMovieList({
+  watchedMovies,
+  onDeleteWatched,
+}: IWatchedMovieListProps) {
   return (
     <ul className="list">
       {watchedMovies.map((movie) => (
@@ -470,7 +496,9 @@ function WatchedMovieList({ watchedMovies ,onDeleteWatched}: IWatchedMovieListPr
               <span>{movie.runtime} min</span>
             </p>
           </div>
-          <button className="btn-delete" onClick={() => onDeleteWatched(movie)}>X</button>
+          <button className="btn-delete" onClick={() => onDeleteWatched(movie)}>
+            X
+          </button>
         </li>
       ))}
     </ul>
